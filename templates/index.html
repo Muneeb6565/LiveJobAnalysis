@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Page<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobScope - Minimal Analytics</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            background: #f9fafb;
+            color: #1f2937;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: #fff;
+            padding: 16px 32px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #3b82f6;
+        }
+
+        .nav-menu a {
+            margin-left: 24px;
+            text-decoration: none;
+            color: #6b7280;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-menu a:hover {
+            color: #3b82f6;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 20px 30px;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .hero p {
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .search-bar input[type="text"] {
+            padding: 10px 16px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            width: 60%;
+            max-width: 400px;
+        }
+
+        .search-bar button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            margin-left: 10px;
+            border-radius: 8px;
+            border: none;
+            background-color: #3b82f6;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .search-bar button:hover {
+            background-color: #2563eb;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 24px;
+            max-width: 960px;
+            margin: 0 auto 40px;
+            padding: 0 20px;
+        }
+
+        .stat-card {
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #3b82f6;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .dashboard {
+            max-width: 960px;
+            margin: 0 auto 60px;
+            padding: 0 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .dashboard-header h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+
+        .dashboard-header p {
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .chart-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">JobScope</div>
+        <nav class="nav-menu">
+            <a href="#">Dashboard</a>
+            <a href="#">Trends</a>
+            <a href="#">Insights</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>Job Market Intelligence</h1>
+        <p>Clean, real-time analytics for smarter hiring</p>
+        <div class="search-bar">
+            <input type="text" id="keywordSearch" placeholder="Search by keyword...">
+            <button onclick="alert('Search feature is not yet wired to backend')">Search</button>
+        </div>
+    </section>
+
+    <section class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">2.4M</div>
+            <div class="stat-label">Jobs Analyzed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">85K</div>
+            <div class="stat-label">Companies</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">15K</div>
+            <div class="stat-label">Skills Tracked</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">60+</div>
+            <div class="stat-label">Job APIs Connected</div>
+        </div>
+    </section>
+
+
+
+
+
+
+<canvas id="skillChart" width="600" height="400">
+    <img src="data:image/png;base64,{{ image_base64 }}" alt="Skill Chart">
+</canvas>
+
+
+    
+
+
+
+
+    <!-- <section class="dashboard">
+        <div class="dashboard-header">
+            <h2>Market Overview</h2>
+            <p>Visualize real-time job data and trends</p>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-card">
+                <div class="chart-title">Job Distribution</div>
+                <canvas id="industryChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Salary Range</div>
+                <canvas id="salaryChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Top Skills</div>
+                <canvas id="skillsChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Remote vs On-site</div>
+                <canvas id="remoteChart"></canvas>
+            </div>
+        </div>
+    </section> -->
+
+    <footer class="footer">
+        &copy; 2025 JobScope — Minimal Job Intelligence
+    </footer>
+
+    <script>
+        new Chart(document.getElementById('industryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Software Dev', 'Data Science', 'DevOps', 'UI/UX', 'Security'],
+                datasets: [{
+                    data: [35, 25, 15, 12, 13],
+                    backgroundColor: ['#3b82f6', '#6366f1', '#f59e0b', '#10b981', '#ef4444']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+
+        new Chart(document.getElementById('salaryChart'), {
+            type: 'bar',
+            data: {
+                labels: ['50K', '70K', '90K', '110K', '130K+'],
+                datasets: [{
+                    data: [10, 25, 35, 20, 10],
+                    backgroundColor: '#3b82f6'
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true } },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        new Chart(document.getElementById('skillsChart'), {
+            type: 'polarArea',
+            data: {
+                labels: ['JavaScript', 'Python', 'React', 'AWS', 'Docker'],
+                datasets: [{
+                    data: [85, 78, 65, 58, 45],
+                    backgroundColor: ['#3b82f6', '#6366f1', '#f59e0b', '#10b981', '#ef4444']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+
+        new Chart(document.getElementById('remoteChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Remote', 'Hybrid', 'On-site'],
+                datasets: [{
+                    data: [45, 30, 25],
+                    backgroundColor: ['#10b981', '#3b82f6', '#ef4444']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+    </script>
+</body>
+</html>
+</title>
+</head>
+<body>
+
+    {% if keyword %}
+        <h3>You entered: {{ keyword }}</h3>
+    {% endif %}
+</body>
+</html>

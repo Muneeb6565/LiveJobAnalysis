@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Search - JobScope</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root{
+      --bg:#f9fafb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+      --brand:#3b82f6; --brand-600:#2563eb; --ring:0 0 0 3px rgba(59,130,246,.25);
+      --chip-border:#e5e7eb; --chip-bg:linear-gradient(180deg,#fff 0%,#f8fafc 100%);
+      --chip-sel:linear-gradient(180deg,#e8f0ff 0%,#eaf2ff 100%);
+      --shadow-sm:0 4px 16px rgba(0,0,0,.06); --shadow-md:0 8px 24px rgba(0,0,0,.08);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8;
+        --brand:#60a5fa; --brand-600:#3b82f6; --ring:0 0 0 3px rgba(96,165,250,.35);
+        --chip-border:#1f2937; --chip-bg:linear-gradient(180deg,#0f172a 0%,#0b1220 100%);
+        --chip-sel:linear-gradient(180deg,#0b1732 0%,#0b2145 100%);
+        --shadow-sm:0 6px 20px rgba(0,0,0,.35); --shadow-md:0 12px 28px rgba(0,0,0,.45);
+      }
+    }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
+      background: var(--bg); color: var(--text); line-height: 1.5; overflow-x: hidden;
+    }
+
+    .header {
+      background: var(--card); padding: 16px 32px; position: sticky; top: 0; z-index: 1000;
+      border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;
+      backdrop-filter: saturate(1.05) blur(6px);
+    }
+    .logo { font-weight: 700; font-size: 1.5rem; color: var(--brand); }
+    .nav-menu a { margin-left: 24px; text-decoration: none; color: var(--muted); font-weight: 600; transition: color .2s; }
+    .nav-menu a:hover { color: var(--brand); }
+
+    .hero { text-align: center; padding: 60px 20px 24px; }
+    .hero h1 { font-size: clamp(2rem,3.2vw,2.6rem); font-weight: 800; margin-bottom: 10px; letter-spacing:-.02em; }
+    .hero p { color: var(--muted); }
+
+    .search-section { display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 28px 20px 10px; }
+    .search-shell{
+      display:flex; gap:12px; flex-wrap:wrap; justify-content:center;
+      max-width: 860px; width: 96%;
+    }
+    .search-section form { display: flex; flex-direction: row; gap: 12px; }
+    .search-section input[type="text"] {
+      padding: 12px 14px; font-size: 1rem; border-radius: 10px; border: 1px solid var(--chip-border); width: clamp(240px, 40vw, 420px);
+      background: var(--chip-bg); color: var(--text); outline: none; transition: box-shadow .15s, border-color .15s, background .2s;
+    }
+    .search-section input[type="text"]:focus { border-color: var(--brand); box-shadow: var(--ring); background: #fff0; }
+    .search-section input[type="submit"] {
+      padding: 12px 18px; font-size: 1rem; border-radius: 10px; border: 1px solid transparent;
+      background-color: var(--brand); color: #fff; cursor: pointer; transition: transform .05s ease, filter .2s ease, box-shadow .2s ease;
+      box-shadow: 0 10px 22px rgba(37,99,235,.22); font-weight: 700;
+    }
+    .search-section input[type="submit"]:hover { filter: brightness(1.05); }
+    .search-section input[type="submit"]:active { transform: translateY(1px); }
+
+    /* Role buttons */
+    .role-wrap{ margin-top: 14px; max-width: 1100px; width: 96%; display:flex; flex-direction:column; gap:8px; align-items:center; }
+    .role-title{ color: var(--muted); font-weight:700; font-size:.9rem; letter-spacing:.06em; text-transform: uppercase; }
+    .role-buttons {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px; width: 100%;
+    }
+    .role-btn {
+      border: 1px solid var(--chip-border);
+      background: var(--chip-bg);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: .95rem;
+      cursor: pointer;
+      transition: background .18s ease, box-shadow .18s ease, border-color .18s ease, transform .02s ease, color .18s ease;
+      user-select: none;
+      display:flex; align-items:center; gap:10px; justify-content:flex-start;
+      box-shadow: var(--shadow-sm);
+      text-align:left;
+    }
+    .role-btn .ico{ font-size:1.05rem; }
+    .role-btn:hover { background: #f5f7fb; border-color: #c7d2fe; }
+    .role-btn:active { transform: translateY(1px); }
+    .role-btn:focus-visible { outline: none; box-shadow: var(--ring); border-color: var(--brand); }
+    .role-btn[aria-pressed="true"] {
+      background: var(--chip-sel);
+      border-color: #93c5fd;
+      color: #0b3ea1;
+      box-shadow: 0 0 0 3px rgba(59,130,246,.18) inset, var(--shadow-md);
+      font-weight: 700;
+    }
+
+    .card {
+      max-width: 1100px; margin: 40px auto; padding: 24px; background-color: var(--card); border-radius: 16px;
+      box-shadow: var(--shadow-md); border: 1px solid var(--chip-border);
+      overflow: visible;
+    }
+    .card h3 { margin-bottom: 16px; font-size: 1.5rem; font-weight: 800; color: var(--text); text-align: center; }
+
+    .plot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; overflow: visible; }
+    .plot {
+      position: relative; padding: 16px; border: 1px solid var(--chip-border); border-radius: 12px; background: var(--card); text-align: center;
+      box-shadow: var(--shadow-sm); transition: all .3s ease; cursor: zoom-in; z-index: 1;
+    }
+    .plot:hover { transform: scale(1.5); z-index: 20; box-shadow: 0 12px 40px rgba(0,0,0,.18); }
+    .plot.expanded { 
+      position: fixed;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) scale(1.0) !important;
+      z-index: 50; 
+      box-shadow: 0 16px 60px rgba(0,0,0,.25); 
+      cursor: zoom-out;
+      max-width: 90vw;
+      max-height: 90vh;
+      margin-top: 20px;
+    }
+    .plot h4 { font-size: 1rem; margin-bottom: 8px; color: #374151; font-weight: 700; }
+    .plot img { display: block; width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+    .plot .placeholder { color: var(--muted); font-size: .95rem; padding: 16px 0; }
+
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); opacity: 0; pointer-events: none; transition: opacity .3s ease; z-index: 49; }
+    .overlay.active { opacity: 1; pointer-events: auto; }
+
+    .actions { display: flex; justify-content: center; margin-top: 16px; }
+    .btn {
+      appearance: none; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700;
+      background: #111827; color: #fff; cursor: pointer; transition: transform .06s ease, opacity .2s ease, background .2s ease;
+    }
+    .btn:hover { background:#0f172a; }
+    .btn:active { transform: translateY(1px); }
+    .btn[disabled] { opacity:.45; cursor:not-allowed; }
+    .btn-primary { background:#3b82f6; }
+    .btn-primary:hover { background:#2563eb; }
+
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:1000; }
+    .modal-backdrop.active { display:flex; }
+    .modal { width:min(96vw, 900px); max-height:90vh; overflow:hidden; background:var(--card); border-radius:16px; box-shadow:0 24px 80px rgba(0,0,0,.35); display:flex; flex-direction:column; }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid var(--chip-border); }
+    .modal-title { font-size:1.1rem; font-weight:800; }
+    .modal-close { background:transparent; border:none; font-size:1.6rem; line-height:1; cursor:pointer; padding:4px 8px; color:#374151; }
+    .modal-body { display:flex; gap:16px; padding:16px; min-height:300px; }
+    .modal-col { flex:1; min-width:0; }
+    .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+    .toolbar input[type="text"] { flex:1; padding:8px 10px; border:1px solid var(--chip-border); border-radius:8px; background:var(--chip-bg); color:var(--text); }
+    .toolbar .mini { padding:8px 10px; border:1px solid var(--chip-border); border-radius:8px; background:var(--card); cursor:pointer; }
+    .skills-list { border:1px solid var(--chip-border); border-radius:12px; padding:12px; overflow:auto; max-height:52vh; }
+    .skill-item { display:flex; align-items:center; gap:10px; padding:6px 8px; border-radius:8px; }
+    .skill-item:hover { background:#f3f4f6; }
+    .modal-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px; border-top:1px solid var(--chip-border); }
+    .pill { font-size:.9rem; color:#374151; background:#f3f4f6; border:1px solid var(--chip-border); padding:6px 10px; border-radius:999px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .plot, .overlay, .role-btn, .search-section input[type="submit"], .search-section input[type="text"] { transition: none; }
+    }
+
+    .footer { text-align: center; padding: 40px 20px; font-size: 0.85rem; color: #9ca3af; }
+  </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">JobScope</div>
+        <nav class="nav-menu">
+            <a href="/check">Dashboard</a>
+            <a href="/about_us">About Us</a>
+            <a href="/contact_us">Contact Us</a>
+        </nav>
+    </header>
+
+  <section class="hero">
+    <h1>Search Jobs</h1>
+    <p>Use our intelligent job keyword search</p>
+  </section>
+
+<section class="search-section">
+<div class="search-shell">
+    <!-- Normal keyword search -->
+    <form action="/" method="post" id="searchForm">
+      <input type="text" name="q" id="qInput" placeholder="Enter keyword..." required>
+      <input type="submit" value="Search">
+    </form>
+
+    <!-- Explanation message -->
+    <p style="margin-top:12px; font-size:.9rem; color:var(--muted); text-align:center;">
+      <strong>Note:</strong> Using the search bar performs a live job market analysis and may take a few minutes.<br>
+      Clicking on the role buttons below shows <strong>instant</strong> results from cached fields.
+    </p>
+</div>
+
+  <!-- Hidden form used ONLY by role buttons -->
+  <form action="/" method="post" id="roleForm" style="display:none;">
+    <input type="hidden" name="r" value="1">
+    <input type="hidden" name="role" id="roleInput">
+  </form>
+
+  <!-- Role buttons -->
+  <div class="role-wrap">
+
+    <div class="role-title" style="margin-bottom:10px;">Popular professional roles</div>
+    <div class="role-buttons" aria-label="Popular professional roles">
+      <!-- Remove name='r' and keep type="button" so they don't submit searchForm -->
+      <button class="role-btn" type="button" data-role="data science"><span class="ico">📊</span>Data Science</button>
+      <button class="role-btn" type="button" data-role="Machine Learning"><span class="ico">🤖</span>Machine Learning Engineering / MLOps</button>
+      <button class="role-btn" type="button" data-role="Generative AI"><span class="ico">🧠</span>Generative AI / LLM Engineering</button>
+      <button class="role-btn" type="button" data-role="Data Engineering"><span class="ico">🗄️</span>Data Engineering</button>
+      <button class="role-btn" type="button" data-role="Business Intelligence"><span class="ico">📈</span>Analytics / Business Intelligence</button>
+      <button class="role-btn" type="button" data-role="Backend Engineering"><span class="ico">🧩</span>Backend Engineering</button>
+      <button class="role-btn" type="button" data-role="Frontend Engineering"><span class="ico">🎨</span>Frontend Engineering</button>
+      <button class="role-btn" type="button" data-role="Full-Stack Engineering"><span class="ico">🛠️</span>Full-Stack Engineering</button>
+      <button class="role-btn" type="button" data-role="DevOps / SRE / Cloud Engineering"><span class="ico">☁️</span>DevOps / SRE / Cloud Engineering</button>
+      <button class="role-btn" type="button" data-role="Cybersecurity"><span class="ico">🛡️</span>Cybersecurity / Security Engineering</button>
+      <button class="role-btn" type="button" data-role="Mobile Development"><span class="ico">📱</span>Mobile Development (iOS / Android)</button>
+      <button class="role-btn" type="button" data-role="QA / Test Automation"><span class="ico">✅</span>QA / Test Automation</button>
+      <button class="role-btn" type="button" data-role="Product Management"><span class="ico">🧭</span>Product Management (Technical)</button>
+      <button class="role-btn" type="button" data-role="UX / UI Design"><span class="ico">✨</span>UX / UI Design</button>
+    </div>
+  </div>
+</section>
+
+  {% set has_plots = keyword and (keyword.get('frequent_skills_plot') or keyword.get('skill_trend_plot') or keyword.get('necessary_vs_better_plot')) %}
+  {% set query_text = query | default('') %}
+
+  <section class="card" id="resultsSection">
+    <h3>Top Skills Charts</h3>
+
+    {% if has_plots %}
+      {% set plots = [
+        ('frequent_skills_plot', 'Top Frequent Skills'),
+        ('skill_trend_plot', 'Skill Trend Over Time'),
+        ('necessary_vs_better_plot', 'Must-have vs Nice-to-have')
+      ] %}
+
+      <div class="plot-grid" id="plotGrid">
+        {% for key, title in plots %}
+          {% set img_data = keyword.get(key, '') %}
+          <div class="plot" tabindex="0" aria-label="{{ title }} (hover or click to zoom)">
+            <h4>{{ title }}</h4>
+            {% if img_data %}
+              <img
+                src="data:image/png;base64,{{ img_data }}"
+                alt="{{ title }}"
+                loading="lazy"
+                decoding="async"
+              />
+            {% else %}
+              <div class="placeholder">No image available.</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="actions">
+        <button id="openRoadmapBtn" class="btn btn-primary">Build Roadmap</button>
+      </div>
+
+    {% else %}
+      <p class="plot placeholder" style="text-align:center;">No charts to show yet. Try a search above.</p>
+    {% endif %}
+  </section>
+
+  <!-- Overlay for click-zoom -->
+  <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+  <!-- Roadmap Modal (unchanged) -->
+  <div id="roadmapModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="roadmapTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="roadmapTitle">Build Your Learning Roadmap</div>
+        <button type="button" class="modal-close" id="closeRoadmapBtn" aria-label="Close">&times;</button>
+      </div>
+
+      <form id="roadmapForm" action="/roadmap" method="post">
+        <input type="hidden" name="q" value="{{ query_text }}"/>
+
+        <div class="modal-body">
+          <div class="modal-col">
+            <div class="toolbar">
+              <input type="text" id="skillFilter" placeholder="Filter skills…" aria-label="Filter skills">
+              <button type="button" class="mini" id="selectAllBtn">Select all</button>
+              <button type="button" class="mini" id="clearAllBtn">Clear</button>
+            </div>
+
+            <div class="skills-list" id="skillsList">
+              {% if skills_list %}
+                {% for s in skills_list[:30] %}
+                  <label class="skill-item">
+                    <input type="checkbox" name="skills" value="{{ s }}">
+                    <span>{{ s }}</span>
+                  </label>
+                {% endfor %}
+              {% else %}
+                <p class="placeholder">No skills available for this search.</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="modal-col" style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <strong>Tips</strong>
+              <ul style="margin:6px 0 0 16px; color:var(--muted); font-size:.95rem;">
+                <li>Select core skills first (Python/SQL/cloud).</li>
+                <li>Add 2–3 complementary tools (BI, orchestration, MLOps).</li>
+                <li>Keep the list focused (5–10 items).</li>
+              </ul>
+            </div>
+            <div class="pill" id="selectedCount">0 selected</div>
+            <p style="color:var(--muted); font-size:.95rem;">We'll generate a step-by-step learning plan ordered by prerequisites and market demand.</p>
+
+            <div style="margin-top: 12px;">
+              <label for="durationInput" style="font-weight: 700; display: block; margin-bottom: 6px; color:var(--text);">Duration Period</label>
+              <select name="duration" id="durationInput"
+                style="width: 100%; padding: 8px 10px; border: 1px solid var(--chip-border); border-radius: 10px; font-size: .95rem; color:var(--text); background:var(--chip-bg);"
+                required>
+                <option value="">Select duration</option>
+                <option value="1 week">1 week</option>
+                <option value="2 weeks">2 weeks</option>
+                <option value="3 weeks">3 weeks</option>
+                <option value="1 month">1 month</option>
+                <option value="2 months">2 months</option>
+                <option value="3 months">3 months</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <span class="pill" id="skillsTotal">{{ skills_list|length }} skills</span>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn" id="cancelBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="generateBtn">Generate Roadmap</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    &copy; 2025 JobScope — Minimal Job Intelligence
+  </footer>
+
+<script>
+  (function () {
+    const roleForm  = document.getElementById('roleForm');
+    const roleInput = document.getElementById('roleInput');
+    const roleBtns  = Array.from(document.querySelectorAll('.role-btn'));
+
+    // Role buttons submit hidden form
+    roleBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        roleBtns.forEach(b => b.setAttribute('aria-pressed', 'false'));
+        btn.setAttribute('aria-pressed', 'true');
+        roleInput.value = btn.getAttribute('data-role') || btn.textContent.trim();
+        roleForm.submit();
+      });
+    });
+
+    /* ✅ Scroll to results if charts are present */
+    const hasPlots = {{ has_plots|tojson }};  // <-- SAFE Jinja → JS
+    if (hasPlots) {
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          const section = document.getElementById("resultsSection") || document.querySelector(".card");
+          if (section) {
+            const y = section.getBoundingClientRect().top + window.pageYOffset - 60;
+            window.scrollTo({ top: y, behavior: "smooth" });
+          }
+        }, 450);
+      });
+    }
+
+    /* Enhanced Plot Zoom */
+    const overlay = document.getElementById('overlay');
+    const plots = Array.from(document.querySelectorAll('.plot'));
+
+    function closeAllPlots() {
+      plots.forEach(p => p.classList.remove('expanded'));
+      overlay.classList.remove('active');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function expandPlot(plot) {
+      closeAllPlots();
+      plot.classList.add('expanded');
+      document.body.style.overflow = 'hidden';
+      overlay.classList.add('active');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    plots.forEach(plot => {
+      plot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        plot.classList.contains('expanded') ? closeAllPlots() : expandPlot(plot);
+      });
+    });
+
+    overlay.addEventListener('click', closeAllPlots);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllPlots(); });
+
+    /* Modal Controls */
+    const openBtn      = document.getElementById('openRoadmapBtn');
+    const roadmapModal = document.getElementById('roadmapModal');
+    const closeBtn     = document.getElementById('closeRoadmapBtn');
+    const cancelBtn    = document.getElementById('cancelBtn');
+    const list         = document.getElementById('skillsList');
+    const filterInput  = document.getElementById('skillFilter');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const clearAllBtn  = document.getElementById('clearAllBtn');
+    const selectedOut  = document.getElementById('selectedCount');
+    const generateBtn  = document.getElementById('generateBtn');
+
+    function openModal() {
+      roadmapModal.classList.add('active');
+      roadmapModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      updateSelectedCount();
+      filterInput?.focus();
+    }
+
+    function closeModal() {
+      roadmapModal.classList.remove('active');
+      roadmapModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    openBtn?.addEventListener('click', openModal);
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    roadmapModal?.addEventListener('click', (e) => {
+      if (e.target === roadmapModal) closeModal();
+    });
+
+    function updateSelectedCount() {
+      const n = list?.querySelectorAll('input[type="checkbox"]:checked').length || 0;
+      selectedOut.textContent = n + ' selected';
+      generateBtn.disabled = n === 0;
+    }
+
+    list?.addEventListener('change', updateSelectedCount);
+
+    filterInput?.addEventListener('input', () => {
+      const q = filterInput.value.toLowerCase();
+      list.querySelectorAll('.skill-item').forEach(el => {
+        el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+
+    selectAllBtn?.addEventListener('click', () => {
+      list.querySelectorAll('.skill-item').forEach(el => {
+        if (el.style.display !== 'none') el.querySelector('input').checked = true;
+      });
+      updateSelectedCount();
+    });
+
+    clearAllBtn?.addEventListener('click', () => {
+      list.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+      updateSelectedCount();
+    });
+
+  })();
+</script>
+
+
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
