@@ -10,12 +10,10 @@ pandas
 dotenv
 numpy
 matplotlib
-matplotlib.pyplot
 sentence-transformers
 scikit-learn
-flask
+Flask
 Flask-APScheduler
-pprint
 
 postgrest
 openai
