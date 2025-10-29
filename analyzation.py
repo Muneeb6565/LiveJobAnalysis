@@ -1,12 +1,14 @@
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
 import io
 import base64
 from collections import Counter
 
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import AgglomerativeClustering
 import pandas as pd

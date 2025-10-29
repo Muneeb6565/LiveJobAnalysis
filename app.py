@@ -1,3 +1,5 @@
+import matplotlib_fix
+
 from flask import Flask, render_template, request, current_app, render_template_string, jsonify, abort
 from flask_apscheduler import APScheduler
 from pipeline2 import JobPipeline
@@ -219,6 +221,7 @@ def func4():
     return render_template('check.html')
 
 
-if __name__ == '__main__':
-   _start_scheduler_once()
-   app.run(debug = True)
+if __name__ == "__main__":
+    # port = int(os.environ.get("PORT", 10000))
+    port  =8080
+    app.run(host="0.0.0.0", port=port)

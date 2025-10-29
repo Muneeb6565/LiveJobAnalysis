@@ -1,11 +1,13 @@
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
 import io
 import base64
 import pandas as pd
 import matplotlib.dates as mdates
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+
 
 
 
