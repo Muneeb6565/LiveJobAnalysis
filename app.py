@@ -1,3 +1,7 @@
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
 from flask import Flask, render_template, request, current_app, render_template_string, jsonify, abort
 from flask_apscheduler import APScheduler
 from pipeline2 import JobPipeline
