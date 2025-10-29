@@ -1,0 +1,24 @@
+# render.yaml — Flask (Gunicorn)
+services:
+  - type: web
+    name: jobscope
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: adzuna_id
+        sync: false
+      - key: adzuna_key
+        sync: false
+      - key: x-rapidapi-key
+        sync: false
+
+
+
