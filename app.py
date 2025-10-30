@@ -226,6 +226,196 @@
 #     port  =8080
 #     app.run(host="0.0.0.0", port=port)
 
+# $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+# import os
+
+# # ----- Matplotlib Fix for Render (Headless Server) -----
+# os.environ["MPLBACKEND"] = "Agg"
+# os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
+# import matplotlib
+# matplotlib.use("Agg")
+# # ------------------------------------------------------
+
+# from flask import Flask, render_template, request, render_template_string, jsonify, abort
+# from flask_apscheduler import APScheduler
+# from pipeline2 import JobPipeline
+# from analyzation import AnalyzationPipeline
+# from skill_analyzation import WilsonNecessityWidget
+# from roadmap import GPTToolExtractor
+# from supabase import create_client 
+# import time
+# import logging
+# from already_cached import upload_to_supabase as cached_upload_to_supabase
+# from database_insertion import Database
+# from dotenv import load_dotenv
+# import pandas as pd
+
+# load_dotenv()
+# SUPABASE_URL = os.getenv("SUPABASE_URL")
+# SUPABASE_API = os.getenv("SUPABASE_KEY")
+
+# supabase = create_client(SUPABASE_URL, SUPABASE_API)
+
+# analyzation_pipeline = AnalyzationPipeline()
+
+# db = Database(
+#     supabase_url=SUPABASE_URL,
+#     supabase_key=SUPABASE_API,
+#     table_skills="skills",
+#     table_jobs="jobs",
+#     table_job_skills="job_skills",
+# )
+
+# app = Flask(__name__)
+
+# logging.basicConfig(level=logging.INFO)
+# ADMIN_UPLOAD_TOKEN = os.getenv("ADMIN_UPLOAD_TOKEN", "change_me")
+
+# # ----------------------- Scheduled Job -----------------------
+# def upload_to_supabase():
+#     try:
+#         app.logger.info("Starting upload_to_supabase()")
+#         cached_upload_to_supabase()
+#         app.logger.info("upload_to_supabase() completed successfully")
+#         return "ok"
+#     except Exception as e:
+#         app.logger.exception("upload_to_supabase() failed")
+#         return f"error: {e}"
+
+# class Config:
+#     SCHEDULER_API_ENABLED = True
+
+# app.config.from_object(Config())
+# scheduler = APScheduler()
+# scheduler.init_app(app)
+
+# scheduler.add_job(
+#     id="daily_supabase_upload",
+#     func=upload_to_supabase,
+#     trigger="cron",
+#     hour=16,
+#     minute=14,
+# )
+
+# # ❗️ DO NOT START SCHEDULER IN WEB DYNO (Render Web services must respond fast)
+# # To run scheduler, create a Render Background Worker later.
+# # scheduler.start()
+
+
+# @app.route("/admin/upload", methods=["POST", "GET"])
+# def manual_upload():
+#     token = request.args.get("token")
+#     if token != ADMIN_UPLOAD_TOKEN:
+#         abort(403)
+#     result = upload_to_supabase()
+#     return jsonify({"status": result})
+
+
+# # ----------------------- MAIN ROUTE -----------------------
+# @app.route('/', methods=['GET', 'POST'])
+# def func():
+#     if request.method == 'POST':
+#         if request.form.get('r'):
+#             selected_role = request.form.get('role')
+#             response = supabase.table('cached').select("*").eq('name', selected_role).execute()
+#             row = response.data
+
+#             payload = {
+#                 "frequent_skills_plot": row[0]['plt1'],
+#                 "skill_trend_plot": row[0]['plt2'],
+#                 "necessary_vs_better_plot": row[0]['plt3'],
+#             }
+#             skill_list = row[0]['skill_list'].strip("[]")
+#             skill_list = [item.strip() for item in skill_list.split(",")]
+
+#             return render_template('check.html', keyword=payload, skills_list=skill_list)
+
+#         keyword = (request.form.get('q') or '').strip()
+
+#         if not keyword:
+#             return render_template('check.html', keyword=None, skills_list=[], error="Please enter a keyword or click a role.")
+
+#         pipeline = JobPipeline(keyword=keyword, supabase_url=SUPABASE_URL, supabase_api=SUPABASE_API)
+#         pipeline.fetch_data()
+#         df_skills = pipeline.extract_skills()
+#         df_skills = df_skills[df_skills.skills != "There are no technical tools, programming languages, or software relevant to jobs in the provided list."]
+#         skills_unique, jobs_table, job_skills_name_only = db.fill_tables(df_skills)
+#         skills_map_df, jobs_table_final, job_skills_full = db.insert_into_supabase(skills_unique, jobs_table, job_skills_name_only)
+
+#         time.sleep(5)
+
+#         page_size = 1000 
+#         all_data = []
+#         for i in range(4):
+#             offset = i * page_size
+#             batch = (
+#                 supabase.table("job_skill_view")
+#                 .select("*")
+#                 .eq("Keyword", keyword)
+#                 .order("JobId")
+#                 .range(offset, offset + page_size - 1)
+#                 .execute()
+#             )
+#             all_data.extend(batch.data)
+#             if len(batch.data) < page_size:
+#                 break
+
+#         df_skills = pd.DataFrame(all_data).rename(columns={
+#             'JobId': 'job_id',
+#             'Title': 'title',
+#             'SkillName': 'skills',
+#             'Keyword': 'keyword',
+#             'JobPosted': 'created'
+#         })
+
+#         frequent_skills_plot = analyzation_pipeline.analyze_top_skills(df_skills)
+#         skill_trend_plot, skill_list = analyzation_pipeline.skill_trends()
+
+#         widget = WilsonNecessityWidget(df_skills, nec_wlb_pct=40.0)
+#         widget.run()
+#         necessary_vs_better_plot = widget.plot_base64()
+
+#         payload = {
+#             "frequent_skills_plot": frequent_skills_plot,
+#             "skill_trend_plot": skill_trend_plot,
+#             "necessary_vs_better_plot": necessary_vs_better_plot,
+#         }
+
+#         return render_template('check.html', keyword=payload, skills_list=skill_list)
+
+#     return render_template('check.html', keyword=None, skills_list=[])
+
+
+# @app.route('/roadmap', methods=['POST'])
+# def roadmap():
+#     selected_skills = request.form.getlist('skills')
+#     duration = request.form.get("duration")
+#     extractor = GPTToolExtractor(str(duration), selected_skills)
+#     return render_template_string(extractor.result)
+
+
+# @app.route('/about_us')
+# def func2():
+#     return render_template('about_us.html')
+
+
+# @app.route('/contact_us')
+# def func3():
+#     return render_template('contact_us.html')
+
+
+# @app.route('/check')
+# def func4():
+#     return render_template('check.html')
+
+
+# # ✅ Correct port binding for Render
+# if __name__ == "__main__":
+#     port = int(os.environ.get("PORT", 10000))
+#     app.run(host="0.0.0.0", port=port)
+
+# **************************************************************************
+
 
 import os
 
@@ -238,49 +428,54 @@ matplotlib.use("Agg")
 
 from flask import Flask, render_template, request, render_template_string, jsonify, abort
 from flask_apscheduler import APScheduler
-from pipeline2 import JobPipeline
-from analyzation import AnalyzationPipeline
-from skill_analyzation import WilsonNecessityWidget
-from roadmap import GPTToolExtractor
-from supabase import create_client 
-import time
-import logging
-from already_cached import upload_to_supabase as cached_upload_to_supabase
-from database_insertion import Database
+from supabase import create_client
 from dotenv import load_dotenv
 import pandas as pd
+import time
+import logging
 
 load_dotenv()
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_API = os.getenv("SUPABASE_KEY")
-
-supabase = create_client(SUPABASE_URL, SUPABASE_API)
-
-analyzation_pipeline = AnalyzationPipeline()
-
-db = Database(
-    supabase_url=SUPABASE_URL,
-    supabase_key=SUPABASE_API,
-    table_skills="skills",
-    table_jobs="jobs",
-    table_job_skills="job_skills",
-)
-
-app = Flask(__name__)
-
-logging.basicConfig(level=logging.INFO)
 ADMIN_UPLOAD_TOKEN = os.getenv("ADMIN_UPLOAD_TOKEN", "change_me")
 
-# ----------------------- Scheduled Job -----------------------
+# ✅ Create Flask App
+app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+
+# ✅ Create Supabase Client (this is lightweight)
+supabase = create_client(SUPABASE_URL, SUPABASE_API)
+
+# --------------------------------------------------------------------
+# ✅ LAZY INITIALIZATION HELPERS (Fixes startup crash)
+# --------------------------------------------------------------------
+def get_services():
+    from analyzation import AnalyzationPipeline
+    from database_insertion import Database
+
+    analyzation_pipeline = AnalyzationPipeline()
+    db = Database(
+        supabase_url=SUPABASE_URL,
+        supabase_key=SUPABASE_API,
+        table_skills="skills",
+        table_jobs="jobs",
+        table_job_skills="job_skills",
+    )
+    return analyzation_pipeline, db
+
+
+# --------------------------------------------------------------------
+# ✅ Scheduled job (will run in a separate worker later, NOT here)
+# --------------------------------------------------------------------
 def upload_to_supabase():
+    from already_cached import upload_to_supabase as cached_upload_to_supabase
     try:
-        app.logger.info("Starting upload_to_supabase()")
         cached_upload_to_supabase()
-        app.logger.info("upload_to_supabase() completed successfully")
         return "ok"
     except Exception as e:
-        app.logger.exception("upload_to_supabase() failed")
         return f"error: {e}"
+
 
 class Config:
     SCHEDULER_API_ENABLED = True
@@ -297,80 +492,68 @@ scheduler.add_job(
     minute=14,
 )
 
-# ❗️ DO NOT START SCHEDULER IN WEB DYNO (Render Web services must respond fast)
-# To run scheduler, create a Render Background Worker later.
+# ❗️DO NOT START scheduler in web dyno
 # scheduler.start()
 
 
-@app.route("/admin/upload", methods=["POST", "GET"])
+# --------------------------------------------------------------------
+# ✅ Routes
+# --------------------------------------------------------------------
+@app.route("/admin/upload", methods=["GET"])
 def manual_upload():
     token = request.args.get("token")
     if token != ADMIN_UPLOAD_TOKEN:
         abort(403)
-    result = upload_to_supabase()
-    return jsonify({"status": result})
+    return jsonify({"status": upload_to_supabase()})
 
 
-# ----------------------- MAIN ROUTE -----------------------
 @app.route('/', methods=['GET', 'POST'])
 def func():
+    analyzation_pipeline, db = get_services()
+
     if request.method == 'POST':
         if request.form.get('r'):
             selected_role = request.form.get('role')
             response = supabase.table('cached').select("*").eq('name', selected_role).execute()
-            row = response.data
+            row = response.data[0]
 
             payload = {
-                "frequent_skills_plot": row[0]['plt1'],
-                "skill_trend_plot": row[0]['plt2'],
-                "necessary_vs_better_plot": row[0]['plt3'],
+                "frequent_skills_plot": row['plt1'],
+                "skill_trend_plot": row['plt2'],
+                "necessary_vs_better_plot": row['plt3'],
             }
-            skill_list = row[0]['skill_list'].strip("[]")
-            skill_list = [item.strip() for item in skill_list.split(",")]
-
+            skill_list = [item.strip() for item in row['skill_list'].strip("[]").split(",")]
             return render_template('check.html', keyword=payload, skills_list=skill_list)
 
         keyword = (request.form.get('q') or '').strip()
-
         if not keyword:
-            return render_template('check.html', keyword=None, skills_list=[], error="Please enter a keyword or click a role.")
+            return render_template('check.html', keyword=None, skills_list=[], error="Enter keyword or select role.")
+
+        from pipeline2 import JobPipeline
+        from skill_analyzation import WilsonNecessityWidget
 
         pipeline = JobPipeline(keyword=keyword, supabase_url=SUPABASE_URL, supabase_api=SUPABASE_API)
         pipeline.fetch_data()
         df_skills = pipeline.extract_skills()
         df_skills = df_skills[df_skills.skills != "There are no technical tools, programming languages, or software relevant to jobs in the provided list."]
         skills_unique, jobs_table, job_skills_name_only = db.fill_tables(df_skills)
-        skills_map_df, jobs_table_final, job_skills_full = db.insert_into_supabase(skills_unique, jobs_table, job_skills_name_only)
+        db.insert_into_supabase(skills_unique, jobs_table, job_skills_name_only)
 
         time.sleep(5)
 
-        page_size = 1000 
         all_data = []
-        for i in range(4):
-            offset = i * page_size
-            batch = (
-                supabase.table("job_skill_view")
-                .select("*")
-                .eq("Keyword", keyword)
-                .order("JobId")
-                .range(offset, offset + page_size - 1)
-                .execute()
-            )
+        for offset in range(0, 4000, 1000):
+            batch = supabase.table("job_skill_view").select("*").eq("Keyword", keyword).order("JobId").range(offset, offset + 999).execute()
             all_data.extend(batch.data)
-            if len(batch.data) < page_size:
+            if len(batch.data) < 1000:
                 break
 
         df_skills = pd.DataFrame(all_data).rename(columns={
-            'JobId': 'job_id',
-            'Title': 'title',
-            'SkillName': 'skills',
-            'Keyword': 'keyword',
-            'JobPosted': 'created'
+            'JobId': 'job_id', 'Title': 'title', 'SkillName': 'skills', 'Keyword': 'keyword', 'JobPosted': 'created'
         })
 
         frequent_skills_plot = analyzation_pipeline.analyze_top_skills(df_skills)
         skill_trend_plot, skill_list = analyzation_pipeline.skill_trends()
-
         widget = WilsonNecessityWidget(df_skills, nec_wlb_pct=40.0)
         widget.run()
         necessary_vs_better_plot = widget.plot_base64()
@@ -388,9 +571,8 @@ def func():
 
 @app.route('/roadmap', methods=['POST'])
 def roadmap():
-    selected_skills = request.form.getlist('skills')
-    duration = request.form.get("duration")
-    extractor = GPTToolExtractor(str(duration), selected_skills)
+    from roadmap import GPTToolExtractor
+    extractor = GPTToolExtractor(str(request.form.get("duration")), request.form.getlist('skills'))
     return render_template_string(extractor.result)
 
 
@@ -413,4 +595,5 @@ def func4():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
