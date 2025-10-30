@@ -4,7 +4,7 @@ services:
     name: jobscope
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
     autoDeploy: true
     envVars:
       - key: OPENAI_API_KEY
